@@ -39,6 +39,30 @@ class PhotoEncryptor:
         key = base64.urlsafe_b64encode(kdf.derive(password_bytes))
         return key
     
+    def get_all_files(self, folder_path, action_type):
+        """Get all files recursively from folder and subfolders"""
+        all_files = []
+        
+        try:
+            for root_dir, dirs, files in os.walk(folder_path):
+                for file in files:
+                    file_path = os.path.join(root_dir, file)
+                    
+                    if action_type == "encrypt":
+                        # Check if file has supported extension
+                        _, ext = os.path.splitext(file)
+                        if ext.lower() in self.supported_extensions:
+                            all_files.append(file_path)
+                    else:  # decrypt
+                        # Check if file has encrypted extension
+                        if file.endswith(self.encrypted_extension):
+                            all_files.append(file_path)
+            
+        except Exception as e:
+            print(f"Error scanning directory: {str(e)}")
+        
+        return all_files
+    
     def encrypt_file(self, file_path: str, password: str) -> bool:
         """Encrypt a single file"""
         try:
@@ -128,8 +152,8 @@ class PhotoEncryptor:
             return False
     
     def setup_gui(self):
-        self.root.title("🔐 Photo Encryption Tool")
-        self.root.geometry("600x550")
+        self.root.title("🔐 Files Encryption Tool")
+        self.root.geometry("600x600")
         self.root.configure(bg="#2c3e50")
         self.root.resizable(True, False)
         
@@ -153,11 +177,11 @@ class PhotoEncryptor:
         main_frame.pack(fill="both", expand=True)
         
         # Title
-        title_label = ttk.Label(main_frame, text="Photo Encryption Tool", style="Title.TLabel")
+        title_label = ttk.Label(main_frame, text="Files Encryption Tool", style="Title.TLabel")
         title_label.pack(pady=(0, 5))
         
         subtitle_label = ttk.Label(main_frame, 
-                                  text="Encrypt and decrypt your photos with password protection", 
+                                  text="Encrypt and decrypt your photos with password protection\n✨ Now includes subfolders!", 
                                   style="Subtitle.TLabel")
         subtitle_label.pack(pady=(0, 20))
         
@@ -183,7 +207,10 @@ class PhotoEncryptor:
                               cursor="hand2")
         browse_btn.pack(side="right")
         
-
+        # File count display
+        self.file_count_label = tk.Label(folder_frame, text="No folder selected",
+                                        bg="#34495e", fg="#95a5a6", font=("Arial", 9))
+        self.file_count_label.pack(pady=(5, 0))
         
         # Action buttons frame
         action_frame = tk.LabelFrame(main_frame, text="🔧 Actions", 
@@ -231,6 +258,7 @@ class PhotoEncryptor:
         security_frame.pack(fill="x", pady=10)
         
         security_text = ("🔐 Uses AES-256 encryption with PBKDF2 key derivation (100,000 iterations)\n"
+                        "🔄 Processes all files in selected folder AND subfolders\n"
                         "Strong passwords recommended for maximum security!")
         self.security_label = tk.Label(security_frame, text=security_text,
                                      bg="#27ae60", fg="white", font=("Arial", 9, "bold"),
@@ -266,6 +294,20 @@ class PhotoEncryptor:
         """Thread-safe error dialog"""
         messagebox.showerror(title, message)
     
+    def update_file_count(self, folder_path):
+        """Update file count display"""
+        try:
+            encrypt_files = self.get_all_files(folder_path, "encrypt")
+            decrypt_files = self.get_all_files(folder_path, "decrypt")
+            
+            count_text = f"📁 Found: {len(encrypt_files)} files to encrypt, {len(decrypt_files)} encrypted files"
+            if len(encrypt_files) > 0 or len(decrypt_files) > 0:
+                count_text += " (including subfolders)"
+            
+            self.file_count_label.config(text=count_text, fg="#3498db")
+        except Exception as e:
+            self.file_count_label.config(text="Error scanning folder", fg="#e74c3c")
+    
     def select_folder(self):
         """Open folder selection dialog"""
         try:
@@ -273,6 +315,7 @@ class PhotoEncryptor:
             if folder_selected:
                 self.folder_path.set(folder_selected)
                 self.status_var.set(f"Selected: {os.path.basename(folder_selected)}")
+                self.update_file_count(folder_selected)
         except Exception as e:
             messagebox.showerror("Error", f"Error selecting folder: {str(e)}")
     
@@ -303,60 +346,81 @@ class PhotoEncryptor:
             messagebox.showerror("Error", f"Error getting password: {str(e)}")
             return None
     
-    def show_confirmation_dialog(self, action_type, file_count):
+    def show_confirmation_dialog(self, action_type, files):
         """Show confirmation dialog before performing actions"""
-        message = (f"This will {action_type} {file_count} files.\n\n"
+        # Count files by directory for better overview
+        dir_count = {}
+        for file_path in files:
+            dir_name = os.path.dirname(file_path)
+            if dir_name not in dir_count:
+                dir_count[dir_name] = 0
+            dir_count[dir_name] += 1
+        
+        file_count = len(files)
+        folder_count = len(dir_count)
+        
+        message = (f"This will {action_type} {file_count} files across {folder_count} folder(s).\n\n"
                   f"{'⚠️  Original files will be deleted after encryption!' if action_type == 'encrypt' else '🔓 Encrypted files will be deleted after decryption!'}\n\n"
-                  f"Make sure you remember your password!\n\n"
-                  f"Do you want to continue?")
+                  f"Folders affected:\n")
+        
+        # Show first few directories
+        for i, (dir_path, count) in enumerate(list(dir_count.items())[:5]):
+            rel_path = os.path.relpath(dir_path, self.folder_path.get())
+            if rel_path == ".":
+                rel_path = "(root folder)"
+            message += f"• {rel_path}: {count} file(s)\n"
+        
+        if len(dir_count) > 5:
+            message += f"• ... and {len(dir_count) - 5} more folders\n"
+        
+        message += f"\nMake sure you remember your password!\n\nDo you want to continue?"
         
         return messagebox.askyesno("Confirm Action", message, icon="warning")
     
     def process_files(self, folder_path, action_type, password):
         """Process files with progress updates"""
         try:
-            if action_type == "encrypt":
-                files = [f for f in os.listdir(folder_path) 
-                        if os.path.splitext(f)[1].lower() in self.supported_extensions]
-                process_func = self.encrypt_file
-            else:  # decrypt
-                files = [f for f in os.listdir(folder_path) 
-                        if f.endswith(self.encrypted_extension)]
-                process_func = self.decrypt_file
+            # Get all files recursively
+            all_files = self.get_all_files(folder_path, action_type)
             
-            if not files:
+            if not all_files:
                 self.root.after(0, self.update_status, f"No files found for {action_type}ion")
                 return False
             
             # Show confirmation dialog
-            if not self.show_confirmation_dialog(action_type, len(files)):
+            if not self.show_confirmation_dialog(action_type, all_files):
                 self.root.after(0, self.update_status, "Operation cancelled by user")
                 return False
             
-            total_files = len(files)
+            total_files = len(all_files)
             processed = 0
             errors = []
             
-            for filename in files:
+            # Process function based on action type
+            process_func = self.encrypt_file if action_type == "encrypt" else self.decrypt_file
+            
+            for file_path in all_files:
                 try:
-                    file_path = os.path.join(folder_path, filename)
+                    # Update status with current file being processed
+                    rel_path = os.path.relpath(file_path, folder_path)
+                    self.root.after(0, self.update_status, f"Processing: {rel_path}")
                     
                     success = process_func(file_path, password)
                     
                     if success:
                         processed += 1
                     else:
-                        errors.append(f"Failed to process: {filename}")
+                        errors.append(f"Failed to process: {rel_path}")
                     
                     # Update progress
                     progress = ((processed + len(errors)) / total_files) * 100
                     self.root.after(0, self.update_progress, progress)
-                    self.root.after(0, self.update_status, f"Processing... ({processed + len(errors)}/{total_files})")
                     
-                    time.sleep(0.1)  # Small delay for visual feedback
+                    time.sleep(0.05)  # Small delay for visual feedback
                     
                 except Exception as e:
-                    errors.append(f"Error with {filename}: {str(e)}")
+                    rel_path = os.path.relpath(file_path, folder_path)
+                    errors.append(f"Error with {rel_path}: {str(e)}")
             
             # Show results
             if errors:
@@ -366,9 +430,14 @@ class PhotoEncryptor:
                 self.root.after(0, self.show_warning, "Partial Success", 
                               f"Processed {processed} files successfully.\n\n{error_message}")
             else:
-                self.root.after(0, self.show_info, "Success", f"Successfully {action_type}ed {processed} files!")
+                self.root.after(0, self.show_info, "Success", 
+                              f"Successfully {action_type}ed {processed} files from {len(set(os.path.dirname(f) for f in all_files))} folder(s)!")
             
             self.root.after(0, self.update_status, f"Completed: {processed} files {action_type}ed")
+            
+            # Update file count after processing
+            self.root.after(100, lambda: self.update_file_count(folder_path))
+            
             return True
             
         except Exception as e:
